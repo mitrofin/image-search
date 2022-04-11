@@ -36,6 +36,7 @@ export default class Searchbar extends Component {
             <input
               className={s.searchFormInput}
               type="text"
+              value={this.state.imageSearch}
               autoComplete="off"
               autoFocus
               placeholder="Enter a query to search for the image"
