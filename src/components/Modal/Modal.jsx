@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import s from './Modal.module.css';
+import s from './Modal.module.scss';
 
 class Modal extends Component {
   componentDidMount() {
