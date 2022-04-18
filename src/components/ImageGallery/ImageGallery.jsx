@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import FetchImage from '../../services/fetchImage';
 import ImageGalleryItem from '../ImageGalleryItem';
 import Modal from '../Modal';
@@ -14,8 +14,16 @@ const Status = {
   REJECTED: 'rejected',
 };
 
-class ImageGallery extends Component {
-  state = {
+function ImageGallery({ searchImage }) {
+  /* const [searchImage, setSearchImage] = useState(''); */
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState(null);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(Status.IDLE);
+
+  /* state = {
     images: [],
     page: 1,
     showModal: false,
@@ -23,13 +31,47 @@ class ImageGallery extends Component {
     loading: false,
     error: null,
     status: Status.IDLE,
-  };
-  componentDidUpdate(prevProps, prevState) {
-    const { page, error } = this.state;
+  }; */
+
+  useEffect(() => {
+    if (searchImage === '') {
+      return;
+    }
+
+    setStatus(Status.PENDING);
+
+    FetchImage(searchImage, page)
+      .then(data => {
+        if (data.hits.length === 0) {
+          setError(error);
+          resetPage();
+        }
+        if (data.hits.length < 12) {
+          setImages(data.hits);
+          setStatus(Status.RESOLVED);
+        }
+        if (data.hits.length >= 12 && page >= 1) {
+          setImages(prev => [...prev, ...data.hits]);
+          setStatus(Status.RESOLVED);
+          window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      })
+      .catch(error => {
+        setError(error);
+        setStatus(Status.REJECTED);
+      });
+  }, [searchImage, page, error]);
+  /*   componentDidUpdate(prevProps, prevState) {
+    
     const prevName = prevProps.searchImage;
     const nextName = this.props.searchImage;
     const prevPage = prevState.page;
     const nextPage = this.state.page;
+
+
 
     if (prevName !== nextName || prevPage !== nextPage) {
       this.setState({ status: Status.PENDING });
@@ -56,7 +98,7 @@ class ImageGallery extends Component {
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
-  }
+  } */
 
   /*  if (prevName !== nextName) {
       this.setState({ loading: true, images: [] });
@@ -86,39 +128,35 @@ class ImageGallery extends Component {
       behavior: 'smooth',
     });
   } */
-  resetPage = () => {
-    this.setState({ page: 1 });
+  const resetPage = () => {
+    /* setSearchImage(''); */
+    setPage(1);
   };
 
-  toglleModal = image => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      largeImageURL: image,
-    }));
+  const toglleModal = image => {
+    setShowModal(!showModal);
+    setLargeImageURL(image);
   };
-  onIncrementPage = event => {
-    this.setState({ page: this.state.page + 1 });
+  const onIncrementPage = event => {
+    setPage(prevState => prevState + 1);
   };
+  /*   const handleFormSubmit = searchImage => {
+    resetPage();
+    setSearchImage(searchImage);
+  }; */
 
-  render() {
-    const { error, largeImageURL, showModal, images, status /* loading */ } =
-      this.state;
-
-    return (
-      <>
-        {error && <ErrorNotification message={error.message} />}
-        {images && (
-          <ul className={s.imageGallery}>
-            <ImageGalleryItem images={images} onClick={this.toglleModal} />
-          </ul>
-        )}
-        {status === 'pending' && <Loader />}
-        {images.length >= 12 && <Button onClick={this.onIncrementPage} />}
-        {showModal && (
-          <Modal image={largeImageURL} onCloseModal={this.toglleModal} />
-        )}
-      </>
-    );
-  }
+  return (
+    <>
+      {error && <ErrorNotification message={error.message} />}
+      {images && (
+        <ul className={s.imageGallery}>
+          <ImageGalleryItem images={images} onClick={toglleModal} />
+        </ul>
+      )}
+      {status === 'pending' && <Loader />}
+      {images.length >= 12 && <Button onClick={onIncrementPage} />}
+      {showModal && <Modal image={largeImageURL} onCloseModal={toglleModal} />}
+    </>
+  );
 }
 export default ImageGallery;
